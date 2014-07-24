@@ -60,9 +60,9 @@ function SCResolver(c_id) {
     }, function(){
       // finished fetching tracks
       callback( null, tracks );
-    })
+    });
   };
-};
+}
 
 
 module.exports = SCResolver;
