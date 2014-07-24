@@ -30,6 +30,8 @@ function SCResolver(c_id) {
       } else if (json.kind == 'group') {
         // fetch the groups
         self.paginate_requests(self.sc_api + "/groups/" + json.id + "/tracks.json" +  self.client_id_prefix + self.limit, callback);
+      } else if (json.kind == 'track') {
+        callback(null, [json]);
       } else {
         console.log(json);
       }
