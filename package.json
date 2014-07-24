@@ -5,10 +5,11 @@
   "private": false,
   "main": "soundcloud-resolver.js",
   "dependencies": {
-    "request": "*"
+    "request": "*",
+    "async": "*"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/benkaiser/soundcloud-resolver.git"
-  },
+  }
 }
