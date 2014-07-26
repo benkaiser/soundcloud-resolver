@@ -16,7 +16,7 @@ function SCResolver(c_id) {
     var self = this;
 
     request(self.sc_api + "/resolve.json" + self.client_id_prefix + self.limit + "url=" + encodeURI(url), function(error, response, body) {
-      if(error) { callback(error); }
+      if (error) { callback(error); }
       var json = JSON.parse(body);
       if (json.errors) {
         console.log(json);
@@ -26,12 +26,12 @@ function SCResolver(c_id) {
         self.paginate_requests(self.sc_api + "/tracks.json" + self.client_id_prefix + self.limit + "user_id=" + json.id, callback);
       } else if (json.kind == 'playlist') {
         // return the playlist tracks
-        callback(null, json.tracks);
+        self.find_missing_stream_links(json.tracks, callback);
       } else if (json.kind == 'group') {
         // fetch the groups
         self.paginate_requests(self.sc_api + "/groups/" + json.id + "/tracks.json" +  self.client_id_prefix + self.limit, callback);
       } else if (json.kind == 'track') {
-        callback(null, [json]);
+        self.find_missing_stream_links([json], callback);
       } else {
         console.log(json);
       }
@@ -46,20 +46,56 @@ function SCResolver(c_id) {
     var page = 0;
 
     async.until(function(){ return finished; }, function(callback){
-      request(url + "&offset=" + page*self.max_limit, function( error, response, body ) {
-        if ( error ) { callback( error ); }
+      request(url + "&offset=" + page*self.max_limit, function(error, response, body) {
+        if (error) { callback(error); }
         var json = JSON.parse(body);
         tracks = tracks.concat(json);
         // should we stop here?
-        if(json.length != 200){
+        if (json.length != 200){
           finished = true;
         }
         page++;
         callback();
       });
-    }, function(){
+    }, function() {
       // finished fetching tracks
-      callback( null, tracks );
+      self.find_missing_stream_links(tracks, callback);
+    });
+  };
+
+  // loop over the found songs and manually fetch stream urls for ones not given
+  this.find_missing_stream_links = function(tracks, callback){
+    // find the indexes of songs not streamable
+    var not_streamable = [];
+    for(var track in tracks){
+      if(!tracks[track].stream_url){
+        not_streamable.push(track);
+      }
+    }
+    // start async loop until finished
+    var finished = false;
+    if(not_streamable.length === 0){
+      finished = true;
+    }
+
+    async.until(function(){ return finished; }, function(callback){
+      var current_index = not_streamable.pop();
+      request(tracks[current_index].permalink_url, function(error, response, body){
+        if (error) { callback(error); }
+        // extract the track data
+        var matched_part = body.match(/window\.SC\.bufferTracks\.push\(\{.+\}\)\;/).slice(0)[0];
+        var json_part = JSON.parse(matched_part.substr(28, matched_part.length-30));
+        // set the stream_url
+        tracks[current_index].stream_url = json_part.streamUrl;
+        // if we are finished, mark it
+        if(not_streamable.length === 0){
+          finished = true;
+        }
+        // call next interation
+        callback();
+      });
+    }, function() {
+      callback(null, tracks);
     });
   };
 }
