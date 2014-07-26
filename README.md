@@ -3,6 +3,13 @@ Soundcloud Resolver
 
 Simple NodeJS library for resolving soundcloud url's to their associated tracks
 
+Installation
+-----
+
+Install via npm:
+
+`npm install soundcloud-resolver`
+
 Usage
 -----
 
