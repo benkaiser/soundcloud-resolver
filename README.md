@@ -17,7 +17,7 @@ Best explained in code:
 
 ```
 // get the class
-var SoundcloudResolver = require('./soundcloud-resolver.js');
+var SoundcloudResolver = require('soundcloud-resolver');
 
 // get the object, and itialise it with your soundcloud client_id
 var scres = new SoundcloudResolver('YOUR_CLIENT_ID');
