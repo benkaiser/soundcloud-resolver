@@ -11,19 +11,29 @@ function SCResolver(cId) {
   this.scAPI = 'https://api.soundcloud.com';
   this.maxLimit = 200;
   this.limit = 'limit=' + this.maxLimit + '&';
+  this.resolveUrlPrefix = this.scAPI + '/resolve.json' + this.clientIdPrefix + this.limit + 'url=';
 
   var magicId = '376f225bf427445fc4bfb6b99b72e0bf';
 
   this.resolve = function(url, callback) {
     var _this = this;
 
-    request(_this.scAPI + '/resolve.json' + _this.clientIdPrefix + _this.limit + 'url=' + encodeURI(url), function(error, response, body) {
+    request(_this.resolveUrlPrefix + encodeURI(url), function(error, response, body) {
       if (error) { callback(error); }
 
       var json = JSON.parse(body);
       if (json.errors) {
-        console.log(json);
-        callback('client_id not authorised');
+        if (url.indexOf('reposts') > 0) {
+          // process the track as a repost
+          request(_this.resolveUrlPrefix + encodeURI(url.replace(/reposts/, '')), function(error, response, body) {
+            json = JSON.parse(body);
+            _this.paginateRepostRequests('https://api-v2.soundcloud.com/profile/soundcloud:users:' + json.id + '', callback);
+          });
+        } else {
+          // fail
+          console.log(json);
+          callback('client_id not authorised');
+        }
       } else if (json.kind == 'user') {
         // fetch the tracks by the user
         _this.paginateRequests(_this.scAPI + '/tracks.json' + _this.clientIdPrefix + _this.limit + 'user_id=' + json.id, callback);
@@ -61,6 +71,48 @@ function SCResolver(cId) {
 
         // should we stop here?
         if (json.length != 200) {
+          finished = true;
+        }
+
+        page++;
+        callback();
+      });
+    },
+
+    function() {
+      // finished fetching tracks
+      _this.findMissingTracksStreamUrl(tracks, callback);
+    });
+  };
+
+  this.paginateRepostRequests = function(url, callback) {
+    var _this = this;
+
+    var tracks = [];
+    var finished = false;
+    var page = 0;
+
+    async.until(function() {
+      return finished;
+    },
+
+    function(callback) {
+      request(url, function(error, response, body) {
+        if (error) { callback(error); }
+
+        var json = JSON.parse(body);
+
+        for (var x = 0; x < json.collection.length; x++) {
+          // only add it if it's defined
+          if(json.collection[x].track) {
+            tracks.push(json.collection[x].track);
+          }
+        }
+
+        // should we stop here?
+        if (json.next_href) {
+          url = json.next_href;
+        } else {
           finished = true;
         }
 
