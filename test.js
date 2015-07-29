@@ -11,15 +11,19 @@ var urls = {
 };
 
 async.eachSeries(Object.keys(urls), function(url, callback) {
-  console.log("testing " + url + ": " + urls[url]);
+  console.log('testing ' + url + ': ' + urls[url]);
   scres.resolve(urls[url], function(err, tracks) {
     if (err) {
-      console.log( "Error: " + err );
+      console.log( 'Error: ' + err);
     } else {
-      console.log(tracks.length + " tracks returned");
+      console.log(tracks.length + ' tracks returned');
+      console.log(tracks[0]);
     }
+
     callback();
   });
-}, function(){
-  console.log("testing done.");
+},
+
+function() {
+  console.log('testing done.');
 });
