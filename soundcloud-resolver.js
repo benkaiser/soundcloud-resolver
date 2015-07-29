@@ -12,6 +12,8 @@ function SCResolver(c_id) {
   this.max_page = 500;
   this.limit = "limit=" + this.max_limit + "&";
 
+  var magic_id = "376f225bf427445fc4bfb6b99b72e0bf";
+
   this.resolve = function(url, callback) {
     var self = this;
 
@@ -79,14 +81,15 @@ function SCResolver(c_id) {
     }
 
     async.until(function(){ return finished; }, function(callback){
-      var current_index = not_streamable.pop();
-      request(tracks[current_index].permalink_url, function(error, response, body){
+      var currentIndex = not_streamable.pop();
+      // call to special endpoint to fetch stream urls
+      request('http://api.soundcloud.com/i1/tracks/' + tracks[currentIndex].id + '/streams?client_id=' + magic_id, function(error, response, body){
         if (error) { callback(error); }
         // extract the track data
-        var matched_part = body.match(/window\.SC\.bufferTracks\.push\(\{.+\}\)\;/).slice(0)[0];
-        var json_part = JSON.parse(matched_part.substr(28, matched_part.length-30));
+        var responseBody = JSON.parse(body);
         // set the stream_url
-        tracks[current_index].stream_url = json_part.streamUrl;
+        tracks[currentIndex].stream_url = responseBody.http_mp3_128_url;
+        tracks[currentIndex].streamable = true;
         // if we are finished, mark it
         if(not_streamable.length === 0){
           finished = true;
