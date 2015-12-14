@@ -1,7 +1,8 @@
 {
   "name": "soundcloud-resolver",
   "description": "Simple NodeJS library for resolving soundcloud url's to their associated tracks",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "license": "MIT",
   "private": false,
   "main": "soundcloud-resolver.js",
   "dependencies": {
