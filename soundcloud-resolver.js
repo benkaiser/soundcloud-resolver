@@ -21,7 +21,15 @@ function SCResolver(cId) {
     request(_this.resolveUrlPrefix + encodeURI(url), function(error, response, body) {
       if (error) { callback(error); }
 
-      var json = JSON.parse(body);
+      var json;
+      try {
+        json = JSON.parse(body);
+      } catch (parseError) {
+        var err = 'Error passing response from soundcloud. Unable to resolve URL.' +
+                  'This is likely because the track uploader disabled API access.';
+        callback(err)
+        return;
+      }
       if (json.errors) {
         if (url.indexOf('reposts') > 0) {
           // process the track as a repost
